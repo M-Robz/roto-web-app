@@ -1,0 +1,64 @@
+<!-- https://developer.mozilla.org/en-US/docs/Learn/HTML/Forms/How_to_structure_an_HTML_form -->
+
+<!-- Begin Content -->
+<main>
+<h1><span class="subtitle">ALOOO Keeper League</span><br />
+  Ownership History</h1>
+
+<form class="insetBox" action="/cdf-dev.php" method="post">
+  <fieldset class="searchTool" data-criterion="teams">
+    <legend>Teams to include:</legend>
+    <ul>
+      <li>
+        <input type="checkbox" id="team1" name="team" value="1">
+        <label for="team1">team1</label>
+      </li>
+      <li>
+        <input type="checkbox" id="team2" name="team" value="1">
+        <label for="team2">team2</label>
+      </li>
+      <li>
+        <input type="checkbox" id="team3" name="team" value="1">
+        <label for="team3">team3</label>
+      </li>
+    </ul>
+  </fieldset>
+
+  <fieldset class="searchTool" data-criterion="weekRange">
+    <legend>Weeks to include:</legend>
+    <ul>
+      <li>
+        <label for="starting">Starting week:</label>
+        <select id="starting" name="startWeek">
+          <option value="week1">week1</option>
+          <option value="week2">week2</option>
+          <option value="week3">week3</option>
+        </select>
+      </li>
+      <li>
+        <label for="ending">Ending week:</label>
+        <select id="ending" name="endWeek">
+          <option value="week1">week1</option>
+          <option value="week2">week2</option>
+          <option value="week3">week3</option>
+        </select>
+      </li>
+    </ul>
+  </fieldset>
+
+  <button type="submit">Submit</button>
+</form>
+
+<div id="tableContainer">
+  <p class="key">* Won championship</p>
+  <table id="serverResponse" class="noGrid scroll-x scroll-alert"></table>
+</div>
+
+</main>
+<!-- End Content -->
+
+</div>
+<!-- End Page Container -->
+
+<script type="text/javascript" src="client-scripts/jquery-3.1.0.min.js"></script>
+<script type="text/javascript" src="cdf-dev.js"></script>
