@@ -4,7 +4,7 @@ $(document).ready(function() {
       $averagesTable = $('#averages');
 
   /*
-   * requestData
+   * ---- requestData ----
    *
    * Inputs:
    *  - params (object) = {

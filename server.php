@@ -1,5 +1,21 @@
 <?php
 
+/*
+ |=====================|
+ |      FUNCTIONS      |
+ |=====================|
+*/
+
+/*
+ * ---- cdf ----
+ *
+ * Use the cumulative distribution function to determine the p-value for a given z-score.
+ *
+ * Inputs:
+ *  - $z (float): z-score
+ *
+ * Output (float): p-value
+ */
 function cdf($z) {
   $value = $z;
   $sum = $z;
@@ -9,13 +25,34 @@ function cdf($z) {
   }
   return 0.5 + ($sum / sqrt(2*M_PI)) * exp(-($x*$x) / 2);
 }
-// Sanitize form input
+
+/*
+ * ---- clean ----
+ *
+ * Sanitize form input by trimming, stripping slashes, and encoding html special chars.
+ *
+ * Inputs:
+ *  - $data (string): the string to sanitize
+ *
+ * Output (string): the sanitized string
+ */
 function clean($data) {
   $data = trim($data);
   $data = stripslashes($data);
   $data = htmlspecialchars($data);
   return $data;
 }
+
+/*
+ * ---- mean ----
+ *
+ * Calculate the mean for a set of numbers.
+ *
+ * Inputs:
+ *  - $data (array of floats): the set of numbers
+ *
+ * Output (float): the mean value
+ */
 function mean($data) {
   $count = count($data);
   if ($count > 0) {
@@ -24,6 +61,52 @@ function mean($data) {
     return 'error:div/0';
   }
 }
+
+
+/*
+ |==========================|
+ |      DATA STRUCTURE      |
+ |==========================|
+
+  $allTeamStats [         assoc arr (keys are team names)
+    TEAM_1 => {           obj
+      categoryStats: [    assoc arr (keys are cat names)
+        CATEGORY_1 => [   assoc arr (keys are stat names)
+          mean            float
+          sd              float
+          score           int
+      aggregateStats: [   assoc arr (keys are stat names)
+        batting           float
+        pitching          float
+        grandTotal        float
+        (change?)
+        rotoPct           int
+        h2hPct            int
+        diffInPct         int
+*/
+
+
+/*
+ |===================|
+ |      CLASSES      |
+ |===================|
+*/
+
+/*
+ *
+ * ---- TeamStatHolder ----
+ *
+ * DESCRIPTION
+ *
+ * Properties:
+ *  - categoryStats
+ *  - aggregateStats
+ *
+ * Methods:
+ *  - getScores: Retrieve scores for an arbitrary array of category names
+ *      Inputs: $categories (array)
+ *      Output: $scores (associative array): [ cat1 => score, cat2 => score, ... ]
+ */
 class TeamStatHolder { // capitalize by convention
   public $categoryStats = [];
   public $aggregateStats = [];
@@ -33,7 +116,6 @@ class TeamStatHolder { // capitalize by convention
     $this->aggregateStats = $aggregateStats;
   }
 
-  // Retrieve scores for an arbitrary array of category names
   public function getScores($categories) {
     $scores = []; // assoc array
     foreach ($categories as $category) {
@@ -44,6 +126,11 @@ class TeamStatHolder { // capitalize by convention
 }
 
 
+/*
+ |=====================|
+ |      EXECUTION      |
+ |=====================|
+*/
 
 // DB config
 $db = 'tbpgcpqd_alooo';
@@ -76,26 +163,6 @@ if ($conn->connect_error) {
 //             AND TABLE_NAME='".$dbTable."';";
 // $colNames = $conn->query($colNameQ);
 // $numFields = $colNames->num_rows;
-
-/*
-DATA STRUCTURE
-
-  $allTeamStats [         assoc arr (keys are team names)
-    TEAM_1 => {           obj
-      categoryStats: [    assoc arr (keys are cat names)
-        CATEGORY_1 => [   assoc arr (keys are stat names)
-          mean            float
-          sd              float
-          score           int
-      aggregateStats: [   assoc arr (keys are stat names)
-        batting           float
-        pitching          float
-        grandTotal        float
-        (change?)
-        rotoPct           int
-        h2hPct            int
-        diffInPct         int
-*/
 
 // Calculate mean & sd for each team
 $allTeamStats = [];
