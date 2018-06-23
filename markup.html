@@ -6,41 +6,41 @@
   Ownership History</h1>
 
 <form class="insetBox" action="/cdf-dev.php" method="post">
-  <fieldset class="searchTool" data-criterion="teams">
+  <fieldset id="teams">
     <legend>Teams to include:</legend>
     <ul>
       <li>
-        <input type="checkbox" id="team1" name="team" value="1">
+        <input type="checkbox" id="team1" name="team" value="team1">
         <label for="team1">team1</label>
       </li>
       <li>
-        <input type="checkbox" id="team2" name="team" value="1">
+        <input type="checkbox" id="team2" name="team" value="team2">
         <label for="team2">team2</label>
       </li>
       <li>
-        <input type="checkbox" id="team3" name="team" value="1">
+        <input type="checkbox" id="team3" name="team" value="team3">
         <label for="team3">team3</label>
       </li>
     </ul>
   </fieldset>
 
-  <fieldset class="searchTool" data-criterion="weekRange">
+  <fieldset id="week-range">
     <legend>Weeks to include:</legend>
     <ul>
       <li>
         <label for="starting">Starting week:</label>
         <select id="starting" name="startWeek">
-          <option value="week1">week1</option>
-          <option value="week2">week2</option>
-          <option value="week3">week3</option>
+          <option value="1">Week 1</option>
+          <option value="2">Week 2</option>
+          <option value="3">Week 3</option>
         </select>
       </li>
       <li>
         <label for="ending">Ending week:</label>
         <select id="ending" name="endWeek">
-          <option value="week1">week1</option>
-          <option value="week2">week2</option>
-          <option value="week3">week3</option>
+          <option value="1">Week 1</option>
+          <option value="2">Week 2</option>
+          <option value="3">Week 3</option>
         </select>
       </li>
     </ul>
@@ -60,5 +60,5 @@
 </div>
 <!-- End Page Container -->
 
-<script type="text/javascript" src="client-scripts/jquery-3.1.0.min.js"></script>
-<script type="text/javascript" src="cdf-dev.js"></script>
+<script type="text/javascript" src="jquery-3.1.0.min.js"></script>
+<script type="text/javascript" src="client.js"></script>
