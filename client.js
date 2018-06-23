@@ -1,64 +1,75 @@
-/*
- * requestData
- *
- * Inputs:
- *  - params (object) = {year, batCats, pitCats, teams, startWeek, endWeek}
- *
- * Output: none
-*/
-function requestData(params) {
-
-  var loadMsgDelay,
-      $container = $('#tableContainer'), // TODO: no need to redefine
-      $table = $('#serverResponse'); // TODO: no need to redefine
-
-  // Remove any existing error msg
-  $('.error').remove();
-
-  $.ajax('server.php', {
-    type: 'POST',
-    data: {
-      // 'year': params.year,
-      // 'batCats': params.batCats,
-      // 'pitCats': params.pitCats,
-      'teams': params.teams,
-      'startWeek': params.startWeek,
-      'endWeek': params.endWeek
-    },
-    dataType: 'text',
-    success: function(response) {
-      $table.html(csvToTable(response));
-      $container.fadeIn();
-    },
-    error: function(request, errorType, errorMessage) {
-      $container.before($(
-        '<div class="error">' +
-        'Error: ' + errorType +
-        '</div>'
-      ));
-    },
-    timeout: 10000,
-    beforeSend: function() {
-
-      // Don't show message until 2 seconds have passed without a response
-      loadMsgDelay = setTimeout(function() {
-        $container.before($('<div class="loading">Please wait...</div>'));
-      }, 2000);
-    },
-    complete: function() {
-      clearTimeout(loadMsgDelay);
-      $('.loading').remove();
-    }
-  });
-}
-
-// TODO
-function csvToTable() {}
-
 $(document).ready(function() {
-  var $container = $('#tableContainer'),
-      $table = $('#serverResponse');
+  var $container = $('#table-container'),
+      $standingsTable = $('#standings'),
+      $averagesTable = $('#averages');
 
+  /*
+   * requestData
+   *
+   * Inputs:
+   *  - params (object) = {
+   *      year (string),
+   *      batCats,
+   *      pitCats,
+   *      teams (array of strings),
+   *      startWeek (integer),
+   *      endWeek (integer)
+   *    }
+   *
+   * Output: none
+  */
+  var requestData = function(params) {
+    var loadMsgDelay;
+
+    // Remove any existing error msg
+    $('.error').remove();
+
+    $.ajax('server.php', {
+      type: 'POST',
+      data: {
+        // 'year': params.year,
+        // 'batCats': params.batCats,
+        // 'pitCats': params.pitCats,
+        'teams': params.teams,
+        'startWeek': params.startWeek,
+        'endWeek': params.endWeek
+      },
+      dataType: 'json',
+      success: function(response) {
+        // response (object) {
+        //   standingsMarkup (string),
+        //   averagesMarkup (string)
+        // }
+
+        $standingsTable.html(response.standingsMarkup);
+        $averagesTable.html(response.averagesMarkup);
+        $container.fadeIn();
+      },
+      error: function(request, errorType, errorMessage) {
+        $container.before($(
+          '<div class="error">' +
+          'Error: ' + errorType +
+          '</div>'
+        ));
+      },
+      timeout: 10000,
+      beforeSend: function() {
+
+        // Don't show message until 2 seconds have passed without a response
+        loadMsgDelay = setTimeout(function() {
+          $container.before($('<div class="loading">Please wait...</div>'));
+        }, 2000);
+      },
+      complete: function() {
+        clearTimeout(loadMsgDelay);
+        $('.loading').remove();
+      }
+    });
+  };
+
+  /*
+   * EXECUTION
+   */
   $container.hide();
   // $('select').val('default');
   $('form').trigger('reset');
@@ -94,8 +105,9 @@ $(document).ready(function() {
       console.log('startWeek = ', startWeek);
       console.log('endWeek = ', endWeek);
       $container.fadeOut(function() {
-        $table.empty();
-        // requestData(selectedTeams, startWeek, endWeek);
+        $standingsTable.empty();
+        $averagesTable.empty();
+        requestData(selectedTeams, startWeek, endWeek);
       });
     } else {
       if (selectedTeams.length <= 1) {
