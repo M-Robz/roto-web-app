@@ -1,7 +1,12 @@
-function dbQuery(requestParams) {
-  /*
-  requestParams = {year, batCats, pitCats, teams, startWeek, endWeek}
-  */
+/*
+ * requestData
+ *
+ * Inputs:
+ *  - params (object) = {year, batCats, pitCats, teams, startWeek, endWeek}
+ *
+ * Output: none
+*/
+function requestData(params) {
 
   var loadMsgDelay,
       $container = $('#tableContainer'), // TODO: no need to redefine
@@ -13,12 +18,12 @@ function dbQuery(requestParams) {
   $.ajax('server.php', {
     type: 'POST',
     data: {
-      // 'year': requestParams.year,
-      // 'batCats': requestParams.batCats,
-      // 'pitCats': requestParams.pitCats,
-      'teams': requestParams.teams,
-      'startWeek': requestParams.startWeek,
-      'endWeek': requestParams.endWeek
+      // 'year': params.year,
+      // 'batCats': params.batCats,
+      // 'pitCats': params.pitCats,
+      'teams': params.teams,
+      'startWeek': params.startWeek,
+      'endWeek': params.endWeek
     },
     dataType: 'text',
     success: function(response) {
@@ -67,7 +72,7 @@ $(document).ready(function() {
   //     $('form').trigger('reset');
   //     $container.fadeOut(function() {
   //       table.empty();
-  //       dbQuery(searchType, string);
+  //       requestData(searchType, string);
   //     });
   //   }
   // });
@@ -90,7 +95,7 @@ $(document).ready(function() {
       console.log('endWeek = ', endWeek);
       $container.fadeOut(function() {
         $table.empty();
-        // dbQuery(selectedTeams, startWeek, endWeek);
+        // requestData(selectedTeams, startWeek, endWeek);
       });
     } else {
       if (selectedTeams.length <= 1) {
@@ -110,7 +115,7 @@ $(document).ready(function() {
     //   $('select').val('default');
     //   $container.fadeOut(function() {
     //     table.empty();
-    //     dbQuery(searchType, string);
+    //     requestData(searchType, string);
     //   });
     // }
   });
