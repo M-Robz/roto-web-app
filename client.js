@@ -28,8 +28,8 @@ $(document).ready(function() {
       type: 'POST',
       data: {
         // 'year': params.year,
-        // 'batCats': params.batCats,
-        // 'pitCats': params.pitCats,
+        // 'batCats': params.batCats, -- TODO: need to send if not querying db for cats
+        // 'pitCats': params.pitCats, -- TODO: need to send if not querying db for cats
         'teams': params.teams,
         'startWeek': params.startWeek,
         'endWeek': params.endWeek
@@ -75,7 +75,7 @@ $(document).ready(function() {
   $('form').trigger('reset');
   $('#teams').find('input[type="checkbox"]').prop('checked', true);
 
-  // TODO: what is the purpose of this? Why query when a dropdown is changed?
+  // TODO: what was the purpose of this? Why query when a dropdown is changed?
   // $('select').on('change', function() {
   //   var searchType = $(this).data('criterion'),
   //       string = $(this).val();

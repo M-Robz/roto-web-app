@@ -84,11 +84,12 @@ function whip($wh, $ip) {
  |==========================|
 
   $allTeamStats [         assoc arr (keys are team names)
-    TEAM_1 => {           obj
+    TEAM_1 => {           obj (instance of TeamStatHolder)
       categoryStats: [    assoc arr (keys are cat names)
         CATEGORY_1 => [   assoc arr (keys are stat names)
-          mean            float
-          sd              float
+          mean            float (note that for ratios, this is the mean of weekly ratios)
+          cumulRatio      float (only used for ratios; this is the ratio calculated from cumulative stats)
+          sd              float (note that for ratios, this is the std dev of weekly ratios)
           score           int
       aggregateStats: [   assoc arr (keys are stat names)
         batting           float
@@ -108,10 +109,9 @@ function whip($wh, $ip) {
 */
 
 /*
- *
  * ---- TeamStatHolder ----
  *
- * DESCRIPTION
+ * TODO: DESCRIPTION
  *
  * Properties:
  *  - categoryStats
@@ -120,7 +120,7 @@ function whip($wh, $ip) {
  * Methods:
  *  - getScores: Retrieve scores for an arbitrary array of category names
  *      Inputs: $categories (array)
- *      Output: $scores (associative array): [ cat1 => score, cat2 => score, ... ]
+ *      Output: $scores (associative array): [ CATEGORY_1 => score, CATEGORY_2 => score, ... ]
  */
 class TeamStatHolder { // capitalize by convention
   public $categoryStats = [];
@@ -208,7 +208,9 @@ foreach ($teams as $team) {
       $allTeamStats[$team]->categoryStats[$category] = array('mean' => $mean, 'sd' => $sd);
     }
 
-    // Compute team win%
+    // TODO: Compute team's cumulative ratios
+
+    // Compute team h2h win%
     $gamesWon = 0;
     $gamesPlayed = 0;
     while ($row = $result->fetch_row()) {
@@ -230,7 +232,7 @@ foreach ($teams as $thisTeam) {
       if ($opponent !== $thisTeam) {
         $oppStats = $allTeamStats[$opponent]->categoryStats[$category];
         $z = ($oppStats['mean'] - $ownStats['mean']) / (pow($oppStats['sd'], 2) + pow($ownStats['sd'], 2));
-        array_push($probabilities, 1 - cdf($z));
+        array_push($probabilities, 1 - cdf($z)); // TODO: handle negative categories
       }
     }
     $allTeamStats[$thisTeam]->categoryStats[$category]['score'] = round(mean($probabilities) * 100);
@@ -247,7 +249,7 @@ foreach ($teams as $thisTeam) {
   $allTeamStats[$thisTeam]->aggregateStats['diffInPct'] = $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] - $allTeamStats[$thisTeam]->aggregateStats['h2hPct'];
 }
 
-// Assemble CSV table
+// Assemble CSV table  -- TODO: build html tables instead
   // Note: line breaks in CSV are CRLF, which is a carriage return (\r in PHP) followed by a line feed (\n in PHP)
   // In text files, Windows uses CRLF, while Macs use CR only
   // https://tools.ietf.org/html/rfc4180
