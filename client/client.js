@@ -1,3 +1,5 @@
+// Globals from HTML: pageConfig
+
 $(document).ready(function() {
   var $container = $('#table-container'),
       $standingsTable = $('#standings'),
@@ -6,19 +8,29 @@ $(document).ready(function() {
   /*
    * ---- requestData ----
    *
+   * TODO: will have to refactor to work w/ RHL
+   *
+   * TODO: DESCRIPTION
+   *
    * Inputs:
-   *  - params (object) = {
+   *  - pageConfig (object) = {
    *      year (string),
-   *      batCats,
-   *      pitCats,
-   *      teams (array of strings),
+   *      batCats (array) = [
+   *        {name, isRatio, isNegative}
+   *      ],
+   *      pitCats (array) = [
+   *        {name, isRatio, isNegative}
+   *      ]
+   *    }
+   *  - params (object) = {
+   *      selectedTeams (array of strings),
    *      startWeek (integer),
    *      endWeek (integer)
    *    }
    *
    * Output: none
   */
-  var requestData = function(params) {
+  var requestData = function(config, params) {
     var loadMsgDelay;
 
     // Remove any existing error msg
@@ -27,10 +39,10 @@ $(document).ready(function() {
     $.ajax('server.php', {
       type: 'POST',
       data: {
-        // 'year': params.year,
-        // 'batCats': params.batCats, -- TODO: need to send if not querying db for cats
-        // 'pitCats': params.pitCats, -- TODO: need to send if not querying db for cats
-        'teams': params.teams,
+        'year': config.year,
+        'batCats': config.batCats,
+        'pitCats': config.pitCats,
+        'teams': params.selectedTeams,
         'startWeek': params.startWeek,
         'endWeek': params.endWeek
       },
@@ -93,25 +105,27 @@ $(document).ready(function() {
     e.preventDefault();
     $(this).find('.error').remove();
 
-    var startWeek = $(this).find('#week-range').find('#starting').val();
-    var endWeek = $(this).find('#week-range').find('#ending').val();
-
-    var selectedTeams = []; $(this).find('#teams').find('input:checked').each(function() {
-      selectedTeams.push($(this).attr('id'));
+    var params = {
+      startWeek: $(this).find('#week-range').find('#starting').val(),
+      endWeek: $(this).find('#week-range').find('#ending').val(),
+      selectedTeams: []
+    };
+    $(this).find('#teams').find('input:checked').each(function() {
+      params.selectedTeams.push($(this).attr('id'));
     });
 
-    if (selectedTeams.length > 1 && startWeek < endWeek) {
-      console.log('selectedTeams = ', selectedTeams);
+    if (params.selectedTeams.length > 1 && startWeek < endWeek) {
+      console.log('params.selectedTeams = ', params.selectedTeams);
       console.log('startWeek = ', startWeek);
       console.log('endWeek = ', endWeek);
       $container.fadeOut(function() {
         $standingsTable.empty();
         $averagesTable.empty();
-        requestData(selectedTeams, startWeek, endWeek);
+        requestData(pageConfig, params);
       });
     } else {
-      if (selectedTeams.length <= 1) {
-        console.log('selectedTeams = ', selectedTeams);
+      if (params.selectedTeams.length <= 1) {
+        console.log('params.selectedTeams = ', params.selectedTeams);
         $(this).append('<div class="error">Must select at least two teams</div>');
       }
       if (startWeek >= endWeek) {
