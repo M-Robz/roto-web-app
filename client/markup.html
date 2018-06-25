@@ -62,19 +62,20 @@
 
 <script>
   var pageConfig = {
+    // TODO: logos
     year: '2018',
     batCats: [
       {name: 'R', isRatio: false, isNegative: false},
       {name: 'HR', isRatio: false, isNegative: false},
       {name: 'RBI', isRatio: false, isNegative: false},
-      {name: 'OBP', isRatio: false, isNegative: false},
+      {name: 'OBP', isRatio: true, isNegative: false},
       {name: 'NSB', isRatio: false, isNegative: false}
     ],
     pitCats: [
       {name: 'W', isRatio: false, isNegative: false},
       {name: 'K', isRatio: false, isNegative: false},
-      {name: 'ERA', isRatio: false, isNegative: false},
-      {name: 'WHIP', isRatio: false, isNegative: false},
+      {name: 'ERA', isRatio: true, isNegative: true},
+      {name: 'WHIP', isRatio: true, isNegative: true},
       {name: 'SV+H', isRatio: false, isNegative: false}
     ]
   };

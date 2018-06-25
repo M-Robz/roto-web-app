@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * ~~~~ Load modules ~~~~
+ */
+
 // Functions
 require 'cdf.php';
 require 'clean.php';
@@ -10,34 +14,44 @@ require 'stats.php';
 require 'TeamStatHolder.php';
 
 
-// DB config
+/*
+ * ~~~~ DB config ~~~~
+ */
 $db = 'tbpgcpqd_alooo';
 $user = 'tbpgcpqd_guest';
 $pw = 'zxcvb';
 
-// Read request (make JSON so PHP can read as assoc array)
+
+/*
+ * ~~~~ Read request (make JSON so PHP can read as assoc array) ~~~~
+ */
 $dbTable = 'roto_' . strval($_POST['year']); // int -> str (won't need to convert if year is str in JSON)
 $teams = $_POST['teams']; // array of str
 $startWeek = $_POST['startWeek']; // int
 $endWeek = $_POST['endWeek']; // int
-$batCatObjects = $_POST['batCats']; // arr of objects -- TODO: will PHP treat as objs?
-$pitCatObjects = $_POST['pitCats']; // arr of objects
-$allCatObjects = array_merge($batCatObjects, $pitCatObjects); // arr ['R','HR','RBI','AVG','OBP','NSB','W','SV','K','HLD','ERA','WHIP'];
-$numBatCats = count($batCatObjects);
-$numPitCats = count($pitCatObjects);
-$numAllCats = $numBatCats + $numPitCats;
+$batCatConfigs = $_POST['batCats']; // arr of assoc arrays (I think PHP will treat JS objects as assoc arrays)
+$pitCatConfigs = $_POST['pitCats']; // arr of assoc arrays
+$allCatConfigs = array_merge($batCatConfigs, $pitCatConfigs); // arr of assoc arrays
 
 // Extract bat and pit category names and store in arrays
 $batCatNames = [];
 $pitCatNames = [];
-foreach ($batCatObjects as $batCat) {
+foreach ($batCatConfigs as $batCat) {
   array_push($batCatNames, $batCat->name);
 }
-foreach ($pitCatObjects as $pitCat) {
+foreach ($pitCatConfigs as $pitCat) {
   array_push($pitCatNames, $pitCat->name);
 }
 
-// Connect to database
+// Count categories
+$numBatCats = count($batCatNames);
+$numPitCats = count($pitCatNames);
+$numAllCats = $numBatCats + $numPitCats;
+
+
+/*
+ * ~~~~ Connect to database ~~~~
+ */
 $conn = new mysqli('localhost', $user, $pw, $db);
 if ($conn->connect_error) {
   echo 'Error connecting to database';
@@ -52,11 +66,16 @@ if ($conn->connect_error) {
 // $colNames = $conn->query($colNameQ);
 // $numFields = $colNames->num_rows;
 
-// Calculate mean & sd for each team
+
+/*
+ * ~~~~ Stat calculations ~~~~
+ *
+ * Calculate mean, sd, cumulative ratios, and win% for each team
+ */
 $allTeamStats = [];
 foreach ($teams as $team) {
 
-  // Build and execute query
+  // Build and execute query for current team
   $q =
     "SELECT * FROM ".$dbTable." ".
     "WHERE Team = '".$team."' ".
@@ -71,7 +90,7 @@ foreach ($teams as $team) {
     $allTeamStats[$team] = new TeamStatHolder();
 
     // Compute team's mean and sd for each cat
-    foreach ($allCatObjects as $category) {
+    foreach ($allCatConfigs as $category) {
       $totals = []; // totals for each wk (non-assoc arr)
       while ($row = $result->fetch_row()) {
         array_push($totals, $row[$category->name]);
@@ -95,11 +114,16 @@ foreach ($teams as $team) {
   }
 }
 
-// Calculate table data for each team
+
+/*
+ * ~~~~ Calculate scores and totals ~~~~
+ *
+ * Calculate category scores, total scores, total %, and roto-h2h for each team
+ */
 foreach ($teams as $thisTeam) {
 
   // Calculate category scores
-  foreach ($allCatObjects as $category) {
+  foreach ($allCatConfigs as $category) {
     $ownStats = $allTeamStats[$thisTeam]->categoryStats[$category->name];
     $probabilities = [];
     foreach ($teams as $opponent) {
@@ -130,21 +154,27 @@ foreach ($teams as $thisTeam) {
   $allTeamStats[$thisTeam]->aggregateStats['diffInPct'] = $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] - $allTeamStats[$thisTeam]->aggregateStats['h2hPct'];
 }
 
-// Assemble CSV table  -- TODO: build html tables instead; some var references here are now incorrect
-  // Note: line breaks in CSV are CRLF, which is a carriage return (\r in PHP) followed by a line feed (\n in PHP)
-  // In text files, Windows uses CRLF, while Macs use CR only
-  // https://tools.ietf.org/html/rfc4180
-  // join() is alias of implode()
+
+/*
+ * ~~~~ Assemble CSV table ~~~~
+ */
+
+// TODO: build html tables instead
+
+// Note: line breaks in CSV are CRLF, which is a carriage return (\r in PHP) followed by a line feed (\n in PHP)
+// In text files, Windows uses CRLF, while Macs use CR only
+// https://tools.ietf.org/html/rfc4180
+// join() is alias of implode()
 $table = 'Team,' .
-         join(',', $batCatObjects) . ',Batting,' .
-         join(',', $pitCatObjects) . ',Pitching,' .
+         join(',', $batCatNames) . ',Batting,' .
+         join(',', $pitCatNames) . ',Pitching,' .
          'Total,Average,H2H%,Roto–H2H\r\n';
 foreach ($teams as $team) {
   $teamAggStats = $allTeamStats[$team]->aggregateStats;
   $table .= $team . ',' .
-            join(',', $allTeamStats[$team]->getScores($batCatObjects)) . ',' .
+            join(',', $allTeamStats[$team]->getScores($batCatNames)) . ',' .
             $teamAggStats['batting'] . ',' .
-            join(',', $allTeamStats[$team]->getScores($pitCatObjects)) . ',' .
+            join(',', $allTeamStats[$team]->getScores($pitCatNames)) . ',' .
             $teamAggStats['pitching'] . ',' .
             $teamAggStats['grandTotal'] . ',' .
             $teamAggStats['rotoPct'] . ',' .
@@ -152,5 +182,8 @@ foreach ($teams as $team) {
             $teamAggStats['diffInPct'] . '\r\n';
 }
 
-// Respond with CSV table
+
+/*
+ * ~~~~ Respond with CSV table ~~~~
+ */
 echo $table;
