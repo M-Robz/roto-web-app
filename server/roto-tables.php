@@ -89,19 +89,60 @@ foreach ($teams as $team) {
     // Create and assign new object to hold stats for the current team
     $allTeamStats[$team] = new TeamStatHolder();
 
-    // Compute team's mean and sd for each cat
+    // Compute team's mean, sd, and cumulRatio for each cat
     foreach ($allCatConfigs as $category) {
+
+      // Calculate mean and sd
       $totals = []; // totals for each wk (non-assoc arr)
       while ($row = $result->fetch_row()) {
         array_push($totals, $row[$category->name]);
       }
       $mean = mean($totals);
       $sd = stats_standard_deviation($totals);
-      $allTeamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd);
-    }
 
-    // TODO: Compute team's cumulative ratios
-    // Access isRatio prop of cat objects and add cumulRatio to categoryStats when necessary
+      // Calculate cumulative ratios if applicable
+      if ($category->isRatio) {
+        switch ($category->name) {
+          case 'OBP':
+            $h = 0;
+            $bb = 0;
+            $pa = 0;
+            while ($row = $result->fetch_row()) {
+              $h += $row['H'];
+              $bb += $row['BB'];
+              $pa += $row['PA'];
+            }
+            $cumulRatio = obp($h, $bb, $pa);
+            break;
+          case 'ERA':
+            $er = 0;
+            $ip = 0;
+            while ($row = $result->fetch_row()) {
+              $er += $row['ER'];
+              $ip += $row['IP'];
+            }
+            $cumulRatio = era($er, $ip);
+            break;
+          case 'WHIP':
+            $wh = 0;
+            $ip = 0;
+            while ($row = $result->fetch_row()) {
+              $wh += $row['WH'];
+              $ip += $row['IP'];
+            }
+            $cumulRatio = whip($wh, $ip);
+            break;
+        }
+
+        // Include cumulRatio
+        $allTeamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd, 'cumulRatio' => $cumulRatio);
+
+      } else {
+
+        // Don't include cumulRatio
+        $allTeamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd);
+      }
+    }
 
     // Compute team h2h win%
     $gamesWon = 0;
