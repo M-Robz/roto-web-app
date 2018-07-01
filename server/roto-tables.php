@@ -140,17 +140,17 @@ foreach ($teams as $thisTeam) {
         array_push($probabilities, $p);
       }
     }
-    $allTeamStats[$thisTeam]->categoryStats[$category->name]['score'] = round(mean($probabilities) * 100);
+    $allTeamStats[$thisTeam]->categoryStats[$category->name]['score'] = round(mean($probabilities) * 100, 5); // retain five decimal places of precision
   }
 
   // Compute totals
     // Note: can't use var for $allTeamStats[$thisTeam] bc it would be a copy, not a reference
-  $batTotal = round(array_sum($allTeamStats[$thisTeam]->getScores($batCatNames)) / 100, 2);
-  $pitTotal = round(array_sum($allTeamStats[$thisTeam]->getScores($pitCatNames)) / 100, 2);
-  $allTeamStats[$thisTeam]->aggregateStats['batting'] = $batTotal;
-  $allTeamStats[$thisTeam]->aggregateStats['pitching'] = $pitTotal;
-  $allTeamStats[$thisTeam]->aggregateStats['grandTotal'] = $batTotal + $pitTotal;
-  $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100); // precision lost here bc bat/pit totals were rounded; does it matter?
+  $batTotal = array_sum($allTeamStats[$thisTeam]->getScores($batCatNames)) / 100;
+  $pitTotal = array_sum($allTeamStats[$thisTeam]->getScores($pitCatNames)) / 100;
+  $allTeamStats[$thisTeam]->aggregateStats['batting'] = round($batTotal, 2);
+  $allTeamStats[$thisTeam]->aggregateStats['pitching'] = round($pitTotal, 2);
+  $allTeamStats[$thisTeam]->aggregateStats['grandTotal'] = round($batTotal + $pitTotal, 2);
+  $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100);
   $allTeamStats[$thisTeam]->aggregateStats['diffInPct'] = $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] - $allTeamStats[$thisTeam]->aggregateStats['h2hPct'];
 }
 
@@ -172,9 +172,9 @@ $table = 'Team,' .
 foreach ($teams as $team) {
   $teamAggStats = $allTeamStats[$team]->aggregateStats;
   $table .= $team . ',' .
-            join(',', $allTeamStats[$team]->getScores($batCatNames)) . ',' .
+            join(',', $allTeamStats[$team]->getScores($batCatNames, 0)) . ',' .
             $teamAggStats['batting'] . ',' .
-            join(',', $allTeamStats[$team]->getScores($pitCatNames)) . ',' .
+            join(',', $allTeamStats[$team]->getScores($pitCatNames, 0)) . ',' .
             $teamAggStats['pitching'] . ',' .
             $teamAggStats['grandTotal'] . ',' .
             $teamAggStats['rotoPct'] . ',' .
