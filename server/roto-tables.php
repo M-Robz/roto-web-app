@@ -197,34 +197,6 @@ foreach ($teams as $thisTeam) {
 
 
 /*
- * ~~~~ Assemble CSV table ~~~~
+ * ~~~~ Respond with JSON ~~~~
  */
-
-// TODO: build html tables instead
-
-// Note: line breaks in CSV are CRLF, which is a carriage return (\r in PHP) followed by a line feed (\n in PHP)
-// In text files, Windows uses CRLF, while Macs use CR only
-// https://tools.ietf.org/html/rfc4180
-// join() is alias of implode()
-$table = 'Team,' .
-         join(',', $batCatNames) . ',Batting,' .
-         join(',', $pitCatNames) . ',Pitching,' .
-         'Total,Average,H2H%,Roto–H2H\r\n';
-foreach ($teams as $team) {
-  $teamAggStats = $allTeamStats[$team]->aggregateStats;
-  $table .= $team . ',' .
-            join(',', $allTeamStats[$team]->getScores($batCatNames, 0)) . ',' .
-            $teamAggStats['batting'] . ',' .
-            join(',', $allTeamStats[$team]->getScores($pitCatNames, 0)) . ',' .
-            $teamAggStats['pitching'] . ',' .
-            $teamAggStats['grandTotal'] . ',' .
-            $teamAggStats['rotoPct'] . ',' .
-            $teamAggStats['h2hPct'] . ',' .
-            $teamAggStats['diffInPct'] . '\r\n';
-}
-
-
-/*
- * ~~~~ Respond with CSV table ~~~~
- */
-echo $table;
+echo json_encode($table);

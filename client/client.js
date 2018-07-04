@@ -79,6 +79,52 @@ $(document).ready(function() {
     });
   };
 
+  var buildMarkup = function(data) {
+    var markup = '';
+
+    // <tr>
+    //   <th colspan="3" rowspan="2">Through Week 11<br>(8 weeks)</th>
+    //   <th colspan="' + pageConfig.batCats.length + '">% chance of winning category</th>
+    //   <th rowspan="2">Batting*</th>
+    //   <th colspan="' + pageConfig.pitCats.length + '">% chance of winning category</th>
+    //   <th rowspan="2">Pitching*</th>
+    //   <th rowspan="2">Total*<br>(# cats)</th>
+    //   <th rowspan="2">Average**<br>(win%)</th>
+    //   <th rowspan="2">H2H%</th>
+    //   <th rowspan="2">Roto &dash;<br>H2H</th>
+    // </tr>
+    //
+    // <tr>
+    batCats.forEach(function(category) {
+      markup += '<th>' + category.name + '</th>';
+    });
+    pitCats.forEach(function(category) {
+      markup += '<th>' + category.name + '</th>';
+    });
+    // </tr>
+    // <tr>
+    //   <td>1</td>
+    //   <td class="imgCell"><img src="images/lnt_v2_100.png"></td>
+    //   <td>Lightning N Thunder <span class="green">&#8593;</span></td>
+    //   <td>71</td>
+    //   <td>62</td>
+    //   <td>63</td>
+    //   <td>56</td>
+    //   <td>46</td>
+    //   <td>2.98</td>
+    //   <td>66</td>
+    //   <td>68</td>
+    //   <td>44</td>
+    //   <td>58</td>
+    //   <td>58</td>
+    //   <td>2.93</td>
+    //   <td>5.91</td>
+    //   <td>59</td>
+    //   <td>56</td>
+    //   <td>+3</td>
+    // </tr>
+  };
+
   /*
    * EXECUTION
    */
