@@ -48,13 +48,9 @@ $(document).ready(function() {
       },
       dataType: 'json',
       success: function(response) {
-        // response (object) {
-        //   standingsMarkup (string),
-        //   averagesMarkup (string)
-        // }
 
-        $standingsTable.html(response.standingsMarkup);
-        $averagesTable.html(response.averagesMarkup);
+        $standingsTable.html(buildStandingsMarkup(response));
+        $averagesTable.html(buildAveragesMarkup(response));
         $container.fadeIn();
       },
       error: function(request, errorType, errorMessage) {
@@ -80,17 +76,17 @@ $(document).ready(function() {
   };
 
   /*
-   * ---- buildRotoMarkup ----
+   * ---- buildStandingsMarkup ----
    *
-   * Build markup for roto table from server response.
+   * Build markup for standings table from server response.
    *
    * Inputs:
    *  - data (object): Server response
    *
    * Output: (string): Markup to be inserted inside the table
    */
-  var buildRotoMarkup = function(data) {
-    var headerMarkup = '',
+  var buildStandingsMarkup = function(data) {
+    var headerMarkup,
         rowMarkup = []; // array of objects: {rank, html}
 
     // Build markup for table header
@@ -115,9 +111,8 @@ $(document).ready(function() {
     headerMarkup += '</tr>';
 
     // Build markup for rows of team stats
-    rowMarkup = [];
     params.selectedTeams.forEach(function(teamName) {
-      var teamData = data[teamName],
+      var teamData = data.teamStats[teamName],
           teamMarkup = {rank: teamData.aggregateStats.rank};
 
       teamMarkup.html = '<tr>' +
@@ -150,8 +145,80 @@ $(document).ready(function() {
     return headerMarkup + rowMarkup.map(function(teamMarkup) { return teamMarkup.html }).join('');
   };
 
-  // TODO
-  // var buildAveragesMarkup = function(data) {}
+  var buildAveragesMarkup = function(data) {
+    var headerMarkup,
+        rowMarkup = [], // array of strings
+        footerMarkup;
+
+    // Build markup for table header
+    headerMarkup = '<tr>' +
+      '<th>Averages per Week</th>';
+    pageConfig.batCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
+    });
+    headerMarkup += '</tr>';
+
+    // Build markup for rows of team stats
+    params.selectedTeams.forEach(function(teamName) {
+      var teamData = data.teamStats[teamName],
+          teamMarkup;
+
+      teamMarkup = '<tr>' +
+        '<td class="imgCell"><img src="' + pageConfig.logos[teamName] + '"></td>' +
+        '<td>' + teamName + '</td>';
+
+      pageConfig.batCats.forEach(function(category) {
+        var value = teamData.categoryStats[category.name].cumulRatio || teamData.categoryStats[category.name].mean;
+
+        teamMarkup += '<td>' + value + '</td>';
+      });
+
+      pageConfig.pitCats.forEach(function(category) {
+        var value = teamData.categoryStats[category.name].cumulRatio || teamData.categoryStats[category.name].mean;
+
+        teamMarkup += '<td>' + value + '</td>';
+      });
+
+      teamMarkup += '</tr>';
+      rowMarkup.push(teamMarkup);
+    });
+
+    // Build markup for mean, median, min
+    footerMarkup = '<tr>' +
+      '<td colspan="2">Max</td>';
+    pageConfig.batCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].max + '</td>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].max + '</td>';
+    });
+    footerMarkup += '</tr>';
+
+    footerMarkup += '<tr>' +
+      '<td colspan="2">Median</td>';
+    pageConfig.batCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].median + '</td>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].median + '</td>';
+    });
+    footerMarkup += '</tr>';
+
+    footerMarkup += '<tr>' +
+      '<td colspan="2">Min</td>';
+    pageConfig.batCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].min + '</td>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].min + '</td>';
+    });
+    footerMarkup += '</tr>';
+
+    return headerMarkup + rowMarkup.join('') + footerMarkup;
+  };
 
   /*
    * EXECUTION
