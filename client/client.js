@@ -143,7 +143,9 @@ $(document).ready(function() {
       rowMarkup.push(teamMarkup);
     });
 
-    // TODO: sort rowMarkup by rank
+    rowMarkup.sort(function(a, b) {
+      return a.rank - b.rank;
+    });
 
     return headerMarkup + rowMarkup.map(function(teamMarkup) { return teamMarkup.html }).join('');
   };
