@@ -68,11 +68,11 @@ if ($conn->connect_error) {
 
 
 /*
- * ~~~~ Stat calculations ~~~~
+ * ~~~~ Calculate team stats ~~~~
  *
  * Calculate mean, sd, cumulative ratios, and win% for each team
  */
-$allTeamStats = [];
+$teamStats = [];
 foreach ($teams as $team) {
 
   // Build and execute query for current team
@@ -87,7 +87,7 @@ foreach ($teams as $team) {
   if ($result->num_rows > 0) {
 
     // Create and assign new object to hold stats for the current team
-    $allTeamStats[$team] = new TeamStatHolder();
+    $teamStats[$team] = new TeamStatHolder();
 
     // Compute team's mean, sd, and cumulRatio for each cat
     foreach ($allCatConfigs as $category) {
@@ -135,12 +135,12 @@ foreach ($teams as $team) {
         }
 
         // Include cumulRatio
-        $allTeamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd, 'cumulRatio' => $cumulRatio);
+        $teamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd, 'cumulRatio' => $cumulRatio);
 
       } else {
 
         // Don't include cumulRatio
-        $allTeamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd);
+        $teamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd);
       }
     }
 
@@ -151,15 +151,15 @@ foreach ($teams as $team) {
       $gamesWon += $row['W'] + $row['T']/2;
       $gamesPlayed += $row['W'] + $row['L'] + $row['T'];
     }
-    $allTeamStats[$team]->aggregateStats['h2hPct'] = round($gamesWon / $gamesPlayed * 100);
+    $teamStats[$team]->aggregateStats['h2hPct'] = round($gamesWon / $gamesPlayed * 100);
   }
 }
 
 
 /*
- * ~~~~ Calculate scores and totals ~~~~
+ * ~~~~ Calculate team scores and totals ~~~~
  *
- * Calculate category scores, total scores, total %, and roto-h2h for each team
+ * Calculate category scores, total scores, total %, roto-h2h, and ranks for each team
  */
 $grandTotals = []; // grand totals for all teams
 
@@ -167,11 +167,11 @@ foreach ($teams as $thisTeam) {
 
   // Calculate category scores
   foreach ($allCatConfigs as $category) {
-    $ownStats = $allTeamStats[$thisTeam]->categoryStats[$category->name];
+    $ownStats = $teamStats[$thisTeam]->categoryStats[$category->name];
     $probabilities = [];
     foreach ($teams as $opponent) {
       if ($opponent !== $thisTeam) {
-        $oppStats = $allTeamStats[$opponent]->categoryStats[$category->name];
+        $oppStats = $teamStats[$opponent]->categoryStats[$category->name];
         $z = ($oppStats['mean'] - $ownStats['mean']) / (pow($oppStats['sd'], 2) + pow($ownStats['sd'], 2));
 
         if ($category->isNegative) { // TODO: need `= true`?
@@ -183,21 +183,21 @@ foreach ($teams as $thisTeam) {
         array_push($probabilities, $p);
       }
     }
-    $allTeamStats[$thisTeam]->categoryStats[$category->name]['score'] = round(mean($probabilities) * 100, 5); // retain five decimal places of precision
+    $teamStats[$thisTeam]->categoryStats[$category->name]['score'] = round(mean($probabilities) * 100, 5); // retain five decimal places of precision
   }
 
   // Compute totals
-    // Note: can't use var for $allTeamStats[$thisTeam] bc it would be a copy, not a reference
-  $batTotal = array_sum($allTeamStats[$thisTeam]->getScores($batCatNames)) / 100;
-  $pitTotal = array_sum($allTeamStats[$thisTeam]->getScores($pitCatNames)) / 100;
-  $allTeamStats[$thisTeam]->aggregateStats['batting'] = round($batTotal, 2);
-  $allTeamStats[$thisTeam]->aggregateStats['pitching'] = round($pitTotal, 2);
-  $allTeamStats[$thisTeam]->aggregateStats['grandTotal'] = round($batTotal + $pitTotal, 2);
-  $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100);
-  $allTeamStats[$thisTeam]->aggregateStats['diffInPct'] = $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] - $allTeamStats[$thisTeam]->aggregateStats['h2hPct'];
+    // Note: can't use var for $teamStats[$thisTeam] bc it would be a copy, not a reference
+  $batTotal = array_sum($teamStats[$thisTeam]->getScores($batCatNames)) / 100;
+  $pitTotal = array_sum($teamStats[$thisTeam]->getScores($pitCatNames)) / 100;
+  $teamStats[$thisTeam]->aggregateStats['batting'] = round($batTotal, 2);
+  $teamStats[$thisTeam]->aggregateStats['pitching'] = round($pitTotal, 2);
+  $teamStats[$thisTeam]->aggregateStats['grandTotal'] = round($batTotal + $pitTotal, 2);
+  $teamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100);
+  $teamStats[$thisTeam]->aggregateStats['diffInPct'] = $teamStats[$thisTeam]->aggregateStats['rotoPct'] - $teamStats[$thisTeam]->aggregateStats['h2hPct'];
 
   // Push current team's grand total to array of all teams' totals
-  array_push($grandTotals, $thisTeam => $allTeamStats[$thisTeam]->aggregateStats['grandTotal']);
+  array_push($grandTotals, $thisTeam => $teamStats[$thisTeam]->aggregateStats['grandTotal']);
 }
 
 // Sort highest to lowest while preserving original keys
@@ -209,11 +209,17 @@ $grandTotals_keys = array_keys($grandTotals);
 
 // Store ranks
 for ($i=0, $len=count($grandTotals); $i<$len; $i++) {
-  $allTeamStats[$grandTotals_keys[$i]]->aggregateStats['rank'] = $i + 1;
+  $teamStats[$grandTotals_keys[$i]]->aggregateStats['rank'] = $i + 1;
 }
 
 
 /*
+ * ~~~~ Calculate league stats ~~~~
+ */
+$leagueStats = [];
+// TODO
+
+/*
  * ~~~~ Respond with JSON ~~~~
  */
-echo json_encode($table);
+echo json_encode(array('teamStats' => $teamStats, 'leagueStats' => $leagueStats));

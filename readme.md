@@ -10,22 +10,18 @@
       name          str
       isRatio       boolean (whether the category is a ratio)
       isNegative    boolean (whether the category is scored negatively, i.e., lower is better)
-    },
-    {}
-  ]
   pitCats: [
     (same as batCats)
-  ]
   teams             arr of str (teams to query for)
   startWeek         int (first week of data to query for)
   endWeek           int (last week of data to query for)
 }
 ```
 
-## Server-side data container
+## Server-side data containers
 
 ```
-$allTeamStats = [       assoc arr (keys are team names)
+$teamStats = [       assoc arr (keys are team names)
   TEAM_1 => {           obj (instance of TeamStatHolder)
     categoryStats: [    assoc arr (keys are cat names)
       CATEGORY_1 => [   assoc arr (keys are stat names)
@@ -42,4 +38,10 @@ $allTeamStats = [       assoc arr (keys are team names)
       rotoPct           int
       h2hPct            int
       diffInPct         int
+
+$leagueStats = [        assoc arr (keys are cat names)
+  CATEGORY_1 => [       assoc arr (keys are summary stat names)
+    max                 float
+    median              float
+    min                 float
 ```
