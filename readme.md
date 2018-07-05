@@ -34,6 +34,7 @@ $allTeamStats = [       assoc arr (keys are team names)
         sd              float (note that for ratios, this is the std dev of weekly ratios)
         score           int
     aggregateStats: [   assoc arr (keys are stat names)
+      rank              int
       batting           float
       pitching          float
       grandTotal        float

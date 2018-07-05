@@ -161,6 +161,8 @@ foreach ($teams as $team) {
  *
  * Calculate category scores, total scores, total %, and roto-h2h for each team
  */
+$grandTotals = []; // grand totals for all teams
+
 foreach ($teams as $thisTeam) {
 
   // Calculate category scores
@@ -193,6 +195,21 @@ foreach ($teams as $thisTeam) {
   $allTeamStats[$thisTeam]->aggregateStats['grandTotal'] = round($batTotal + $pitTotal, 2);
   $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100);
   $allTeamStats[$thisTeam]->aggregateStats['diffInPct'] = $allTeamStats[$thisTeam]->aggregateStats['rotoPct'] - $allTeamStats[$thisTeam]->aggregateStats['h2hPct'];
+
+  // Push current team's grand total to array of all teams' totals
+  array_push($grandTotals, $thisTeam => $allTeamStats[$thisTeam]->aggregateStats['grandTotal']);
+}
+
+// Sort highest to lowest while preserving original keys
+//   (by contrast, rsort() changes keys to items' indexed positions in the array)
+arsort($grandTotals);
+
+// Extract ordered team names
+$grandTotals_keys = array_keys($grandTotals);
+
+// Store ranks
+for ($i=0, $len=count($grandTotals); $i<$len; $i++) {
+  $allTeamStats[$grandTotals_keys[$i]]->aggregateStats['rank'] = $i + 1;
 }
 
 
