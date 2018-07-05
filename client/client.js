@@ -79,51 +79,77 @@ $(document).ready(function() {
     });
   };
 
-  var buildMarkup = function(data) {
-    var markup = '';
+  /*
+   * ---- buildRotoMarkup ----
+   *
+   * Build markup for roto table from server response.
+   *
+   * Inputs:
+   *  - data (object): Server response
+   *
+   * Output: (string): Markup to be inserted inside the table
+   */
+  var buildRotoMarkup = function(data) {
+    var headerMarkup = '',
+        rowMarkup = []; // array of objects: {rank, html}
 
-    // <tr>
-    //   <th colspan="3" rowspan="2">Through Week 11<br>(8 weeks)</th>
-    //   <th colspan="' + pageConfig.batCats.length + '">% chance of winning category</th>
-    //   <th rowspan="2">Batting*</th>
-    //   <th colspan="' + pageConfig.pitCats.length + '">% chance of winning category</th>
-    //   <th rowspan="2">Pitching*</th>
-    //   <th rowspan="2">Total*<br>(# cats)</th>
-    //   <th rowspan="2">Average**<br>(win%)</th>
-    //   <th rowspan="2">H2H%</th>
-    //   <th rowspan="2">Roto &dash;<br>H2H</th>
-    // </tr>
-    //
-    // <tr>
-    batCats.forEach(function(category) {
-      markup += '<th>' + category.name + '</th>';
+    // Build markup for table header
+    headerMarkup = '<tr>' +
+      '<th colspan="3" rowspan="2">Weeks ' + params.startWeek + '&ndash;' + params.endWeek + '</th>' +
+      '<th colspan="' + pageConfig.batCats.length + '">% chance of winning category</th>' +
+      '<th rowspan="2">Batting*</th>' +
+      '<th colspan="' + pageConfig.pitCats.length + '">% chance of winning category</th>' +
+      '<th rowspan="2">Pitching*</th>' +
+      '<th rowspan="2">Total*<br>(# cats)</th>' +
+      '<th rowspan="2">Average**<br>(win%)</th>' +
+      '<th rowspan="2">H2H%</th>' +
+      '<th rowspan="2">Roto &dash;<br>H2H</th>' +
+    '</tr>' +
+    '<tr>';
+    pageConfig.batCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
     });
-    pitCats.forEach(function(category) {
-      markup += '<th>' + category.name + '</th>';
+    pageConfig.pitCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
     });
-    // </tr>
-    // <tr>
-    //   <td>1</td>
-    //   <td class="imgCell"><img src="images/lnt_v2_100.png"></td>
-    //   <td>Lightning N Thunder <span class="green">&#8593;</span></td>
-    //   <td>71</td>
-    //   <td>62</td>
-    //   <td>63</td>
-    //   <td>56</td>
-    //   <td>46</td>
-    //   <td>2.98</td>
-    //   <td>66</td>
-    //   <td>68</td>
-    //   <td>44</td>
-    //   <td>58</td>
-    //   <td>58</td>
-    //   <td>2.93</td>
-    //   <td>5.91</td>
-    //   <td>59</td>
-    //   <td>56</td>
-    //   <td>+3</td>
-    // </tr>
+    headerMarkup += '</tr>';
+
+    // Build markup for rows of team stats
+    rowMarkup = [];
+    params.selectedTeams.forEach(function(teamName) {
+      var teamData = data[teamName],
+          teamMarkup = {rank: teamData.aggregateStats.rank};
+
+      teamMarkup.html = '<tr>' +
+        '<td>' + teamData.aggregateStats.rank + '</td>' +
+        '<td class="imgCell"><img src="' + pageConfig.logos[teamName] + '"></td>' +
+        '<td>' + teamName + '</td>';
+
+      pageConfig.batCats.forEach(function(category) {
+        teamMarkup.html += '<td>' + teamData.categoryStats[category.name].score + '</td>';
+      });
+      teamMarkup.html += '<td>' + teamData.aggregateStats.batting + '</td>';
+
+      pageConfig.pitCats.forEach(function(category) {
+        teamMarkup.html += '<td>' + teamData.categoryStats[category.name].score + '</td>';
+      });
+      teamMarkup.html += '<td>' + teamData.aggregateStats.pitching + '</td>';
+
+      teamMarkup.html += '<td>' + teamData.aggregateStats.grandTotal + '</td>' +
+        '<td>' + teamData.aggregateStats.rotoPct + '</td>' +
+        '<td>' + teamData.aggregateStats.h2hPct + '</td>' +
+        '<td>' + teamData.aggregateStats.diffInPct + '</td>' +
+      '</tr>';
+      rowMarkup.push(teamMarkup);
+    });
+
+    // TODO: sort rowMarkup by rank
+
+    return headerMarkup + rowMarkup.map(function(teamMarkup) { return teamMarkup.html }).join('');
   };
+
+  // TODO
+  // var buildAveragesMarkup = function(data) {}
 
   /*
    * EXECUTION
@@ -151,6 +177,7 @@ $(document).ready(function() {
     e.preventDefault();
     $(this).find('.error').remove();
 
+    // TODO: scope to doc ready fnc
     var params = {
       startWeek: $(this).find('#week-range').find('#starting').val(),
       endWeek: $(this).find('#week-range').find('#ending').val(),
