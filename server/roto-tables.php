@@ -8,6 +8,7 @@
 require 'cdf.php';
 require 'clean.php';
 require 'mean.php';
+require 'median.php';
 require 'stats.php';
 
 // Classes
