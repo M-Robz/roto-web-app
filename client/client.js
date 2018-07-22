@@ -146,17 +146,15 @@ $(document).ready(function() {
   };
 
   var buildAveragesMarkup = function(data) {
-    var headerMarkup,
+    var allCats = pageConfig.batCats.concat(pageConfig.pitCats),
+        headerMarkup,
         rowMarkup = [], // array of strings
         footerMarkup;
 
     // Build markup for table header
     headerMarkup = '<tr>' +
       '<th>Averages per Week</th>';
-    pageConfig.batCats.forEach(function(category) {
-      headerMarkup += '<th>' + category.name + '</th>';
-    });
-    pageConfig.pitCats.forEach(function(category) {
+    allCats.forEach(function(category) {
       headerMarkup += '<th>' + category.name + '</th>';
     });
     headerMarkup += '</tr>';
@@ -170,13 +168,7 @@ $(document).ready(function() {
         '<td class="imgCell"><img src="' + pageConfig.logos[teamName] + '"></td>' +
         '<td>' + teamName + '</td>';
 
-      pageConfig.batCats.forEach(function(category) {
-        var value = teamData.categoryStats[category.name].cumulRatio || teamData.categoryStats[category.name].mean;
-
-        teamMarkup += '<td>' + value + '</td>';
-      });
-
-      pageConfig.pitCats.forEach(function(category) {
+      allCats.forEach(function(category) {
         var value = teamData.categoryStats[category.name].cumulRatio || teamData.categoryStats[category.name].mean;
 
         teamMarkup += '<td>' + value + '</td>';
@@ -189,30 +181,21 @@ $(document).ready(function() {
     // Build markup for mean, median, min
     footerMarkup = '<tr>' +
       '<td colspan="2">Max</td>';
-    pageConfig.batCats.forEach(function(category) {
-      footerMarkup += '<td>' + data.leagueStats[category.name].max + '</td>';
-    });
-    pageConfig.pitCats.forEach(function(category) {
+    allCats.forEach(function(category) {
       footerMarkup += '<td>' + data.leagueStats[category.name].max + '</td>';
     });
     footerMarkup += '</tr>';
 
     footerMarkup += '<tr>' +
       '<td colspan="2">Median</td>';
-    pageConfig.batCats.forEach(function(category) {
-      footerMarkup += '<td>' + data.leagueStats[category.name].median + '</td>';
-    });
-    pageConfig.pitCats.forEach(function(category) {
+    allCats.forEach(function(category) {
       footerMarkup += '<td>' + data.leagueStats[category.name].median + '</td>';
     });
     footerMarkup += '</tr>';
 
     footerMarkup += '<tr>' +
       '<td colspan="2">Min</td>';
-    pageConfig.batCats.forEach(function(category) {
-      footerMarkup += '<td>' + data.leagueStats[category.name].min + '</td>';
-    });
-    pageConfig.pitCats.forEach(function(category) {
+    allCats.forEach(function(category) {
       footerMarkup += '<td>' + data.leagueStats[category.name].min + '</td>';
     });
     footerMarkup += '</tr>';
