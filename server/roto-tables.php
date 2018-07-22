@@ -43,6 +43,7 @@ foreach ($batCatConfigs as $batCat) {
 foreach ($pitCatConfigs as $pitCat) {
   array_push($pitCatNames, $pitCat->name);
 }
+$allCatNames = array_merge($batCatNames, $pitCatNames);
 
 // Count categories
 $numBatCats = count($batCatNames);
@@ -175,7 +176,7 @@ foreach ($teams as $thisTeam) {
         $oppStats = $teamStats[$opponent]->categoryStats[$category->name];
         $z = ($oppStats['mean'] - $ownStats['mean']) / (pow($oppStats['sd'], 2) + pow($ownStats['sd'], 2));
 
-        if ($category->isNegative) { // TODO: need `= true`?
+        if ($category->isNegative) { // TODO: need `= true`? Also below
           $p = cdf($z);
         } else {
           $p = 1 - cdf($z);
@@ -218,7 +219,25 @@ for ($i=0, $len=count($grandTotals); $i<$len; $i++) {
  * ~~~~ Calculate league stats ~~~~
  */
 $leagueStats = [];
-// TODO
+
+foreach ($allCatConfigs as $category) {
+  $rawTotals = [];
+
+  foreach ($teamStats as $team) {
+
+    if ($category->isRatio) {
+      array_push($rawTotals, $team->categoryStats[$category->name]->cumulRatio);
+
+    } else {
+      array_push($rawTotals, $team->categoryStats[$category->name]->mean);
+    }
+  }
+
+  $leagueStats[$category->name]->max = max($rawTotals);
+  $leagueStats[$category->name]->median = median($rawTotals);
+  $leagueStats[$category->name]->min = min($rawTotals);
+}
+
 
 /*
  * ~~~~ Respond with JSON ~~~~
