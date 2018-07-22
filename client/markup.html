@@ -50,8 +50,8 @@
 </form>
 
 <div id="table-container">
-  <table id="standings" class="noGrid scroll-x scroll-alert"></table>
-  <table id="averages" class="noGrid scroll-x scroll-alert"></table>
+  <table id="standings" class="standings withGrid roto scroll-x"></table>
+  <table id="averages" class="averages withGrid roto scroll-x"></table>
 </div>
 
 </main>
@@ -62,7 +62,9 @@
 
 <script>
   var pageConfig = {
-    // TODO: logos
+    logos: {
+      'Lightning N Thunder': 'images/lnt_v2_100.png'
+    },
     year: '2018',
     batCats: [
       {name: 'R', isRatio: false, isNegative: false},

@@ -48,13 +48,9 @@ $(document).ready(function() {
       },
       dataType: 'json',
       success: function(response) {
-        // response (object) {
-        //   standingsMarkup (string),
-        //   averagesMarkup (string)
-        // }
 
-        $standingsTable.html(response.standingsMarkup);
-        $averagesTable.html(response.averagesMarkup);
+        $standingsTable.html(buildStandingsMarkup(response));
+        $averagesTable.html(buildAveragesMarkup(response));
         $container.fadeIn();
       },
       error: function(request, errorType, errorMessage) {
@@ -77,6 +73,151 @@ $(document).ready(function() {
         $('.loading').remove();
       }
     });
+  };
+
+  /*
+   * ---- buildStandingsMarkup ----
+   *
+   * Build markup for standings table from server response.
+   *
+   * Inputs:
+   *  - data (object): Server response
+   *
+   * Output: (string): Markup to be inserted inside the table
+   */
+  var buildStandingsMarkup = function(data) {
+    var headerMarkup,
+        rowMarkup = []; // array of objects: {rank, html}
+
+    // Build markup for table header
+    headerMarkup = '<tr>' +
+      '<th colspan="3" rowspan="2">Weeks ' + params.startWeek + '&ndash;' + params.endWeek + '</th>' +
+      '<th colspan="' + pageConfig.batCats.length + '">% chance of winning category</th>' +
+      '<th rowspan="2">Batting*</th>' +
+      '<th colspan="' + pageConfig.pitCats.length + '">% chance of winning category</th>' +
+      '<th rowspan="2">Pitching*</th>' +
+      '<th rowspan="2">Total*<br>(# cats)</th>' +
+      '<th rowspan="2">Average**<br>(win%)</th>' +
+      '<th rowspan="2">H2H%</th>' +
+      '<th rowspan="2">Roto &dash;<br>H2H</th>' +
+    '</tr>' +
+    '<tr>';
+    pageConfig.batCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
+    });
+    headerMarkup += '</tr>';
+
+    // Build markup for rows of team stats
+    params.selectedTeams.forEach(function(teamName) {
+      var teamData = data.teamStats[teamName],
+          teamMarkup = {rank: teamData.aggregateStats.rank};
+
+      teamMarkup.html = '<tr>' +
+        '<td>' + teamData.aggregateStats.rank + '</td>' +
+        '<td class="imgCell"><img src="' + pageConfig.logos[teamName] + '"></td>' +
+        '<td>' + teamName + '</td>';
+
+      pageConfig.batCats.forEach(function(category) {
+        teamMarkup.html += '<td>' + teamData.categoryStats[category.name].score + '</td>';
+      });
+      teamMarkup.html += '<td>' + teamData.aggregateStats.batting + '</td>';
+
+      pageConfig.pitCats.forEach(function(category) {
+        teamMarkup.html += '<td>' + teamData.categoryStats[category.name].score + '</td>';
+      });
+      teamMarkup.html += '<td>' + teamData.aggregateStats.pitching + '</td>';
+
+      teamMarkup.html += '<td>' + teamData.aggregateStats.grandTotal + '</td>' +
+        '<td>' + teamData.aggregateStats.rotoPct + '</td>' +
+        '<td>' + teamData.aggregateStats.h2hPct + '</td>' +
+        '<td>' + teamData.aggregateStats.diffInPct + '</td>' +
+      '</tr>';
+      rowMarkup.push(teamMarkup);
+    });
+
+    rowMarkup.sort(function(a, b) {
+      return a.rank - b.rank;
+    });
+
+    return headerMarkup + rowMarkup.map(function(teamMarkup) { return teamMarkup.html }).join('');
+  };
+
+  var buildAveragesMarkup = function(data) {
+    var headerMarkup,
+        rowMarkup = [], // array of strings
+        footerMarkup;
+
+    // Build markup for table header
+    headerMarkup = '<tr>' +
+      '<th>Averages per Week</th>';
+    pageConfig.batCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      headerMarkup += '<th>' + category.name + '</th>';
+    });
+    headerMarkup += '</tr>';
+
+    // Build markup for rows of team stats
+    params.selectedTeams.forEach(function(teamName) {
+      var teamData = data.teamStats[teamName],
+          teamMarkup;
+
+      teamMarkup = '<tr>' +
+        '<td class="imgCell"><img src="' + pageConfig.logos[teamName] + '"></td>' +
+        '<td>' + teamName + '</td>';
+
+      pageConfig.batCats.forEach(function(category) {
+        var value = teamData.categoryStats[category.name].cumulRatio || teamData.categoryStats[category.name].mean;
+
+        teamMarkup += '<td>' + value + '</td>';
+      });
+
+      pageConfig.pitCats.forEach(function(category) {
+        var value = teamData.categoryStats[category.name].cumulRatio || teamData.categoryStats[category.name].mean;
+
+        teamMarkup += '<td>' + value + '</td>';
+      });
+
+      teamMarkup += '</tr>';
+      rowMarkup.push(teamMarkup);
+    });
+
+    // Build markup for mean, median, min
+    footerMarkup = '<tr>' +
+      '<td colspan="2">Max</td>';
+    pageConfig.batCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].max + '</td>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].max + '</td>';
+    });
+    footerMarkup += '</tr>';
+
+    footerMarkup += '<tr>' +
+      '<td colspan="2">Median</td>';
+    pageConfig.batCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].median + '</td>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].median + '</td>';
+    });
+    footerMarkup += '</tr>';
+
+    footerMarkup += '<tr>' +
+      '<td colspan="2">Min</td>';
+    pageConfig.batCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].min + '</td>';
+    });
+    pageConfig.pitCats.forEach(function(category) {
+      footerMarkup += '<td>' + data.leagueStats[category.name].min + '</td>';
+    });
+    footerMarkup += '</tr>';
+
+    return headerMarkup + rowMarkup.join('') + footerMarkup;
   };
 
   /*
@@ -105,6 +246,7 @@ $(document).ready(function() {
     e.preventDefault();
     $(this).find('.error').remove();
 
+    // TODO: scope to doc ready fnc
     var params = {
       startWeek: $(this).find('#week-range').find('#starting').val(),
       endWeek: $(this).find('#week-range').find('#ending').val(),
