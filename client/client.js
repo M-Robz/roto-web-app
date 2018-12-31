@@ -208,12 +208,25 @@ $(document).ready(function() {
   };
 
   /*
+   * ---- resetForm ----
+   *
+   * Reset form elements.
+   *
+   * Inputs: none
+   *
+   * Output: none
+   */
+  var resetForm = function () {
+    $container.hide();
+    // $('select').val('default');
+    $('form').trigger('reset');
+    $('#teams').find('input[type="checkbox"]').prop('checked', true);
+  };
+
+  /*
    * EXECUTION
    */
-  $container.hide();
-  // $('select').val('default');
-  $('form').trigger('reset');
-  $('#teams').find('input[type="checkbox"]').prop('checked', true);
+ resetForm();
 
   // TODO: what was the purpose of this? Why query when a dropdown is changed?
   // $('select').on('change', function() {
