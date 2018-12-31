@@ -3,7 +3,12 @@
 $(document).ready(function() {
   var $container = $('#table-container'),
       $standingsTable = $('#standings'),
-      $averagesTable = $('#averages');
+      $averagesTable = $('#averages'),
+      params = { // User-selected parameters for database query
+        startWeek: '',
+        endWeek: '',
+        selectedTeams: []
+      };
 
   /*
    * ---- requestData ----
@@ -226,58 +231,56 @@ $(document).ready(function() {
   /*
    * EXECUTION
    */
+
+ // Reset form elements
  resetForm();
 
-  // TODO: what was the purpose of this? Why query when a dropdown is changed?
-  // $('select').on('change', function() {
-  //   var searchType = $(this).data('criterion'),
-  //       string = $(this).val();
-  //   if (string != 'default') {
-  //     $('form').trigger('reset');
-  //     $container.fadeOut(function() {
-  //       table.empty();
-  //       requestData(searchType, string);
-  //     });
-  //   }
-  // });
-
-  // TODO: rewrite
   $('form').on('submit', function(e) {
     e.preventDefault();
-    $(this).find('.error').remove();
 
-    // TODO: scope to doc ready fnc
-    var params = {
-      startWeek: $(this).find('#week-range').find('#starting').val(),
-      endWeek: $(this).find('#week-range').find('#ending').val(),
-      selectedTeams: []
-    };
-    $(this).find('#teams').find('input:checked').each(function() {
+    var $form = $(this);
+
+    // Remove any error notifications
+    $form.find('.error').remove();
+
+    // Get parameters for query from user selections
+    params.startWeek = $form.find('#week-range').find('#starting').val();
+    params.endWeek = $form.find('#week-range').find('#ending').val();
+    $form.find('#teams').find('input:checked').each(function() {
       params.selectedTeams.push($(this).attr('id'));
     });
 
+    // Validate user selections
     if (params.selectedTeams.length > 1 && startWeek < endWeek) {
+      // If valid, request data from server
+
       console.log('params.selectedTeams = ', params.selectedTeams);
       console.log('startWeek = ', startWeek);
       console.log('endWeek = ', endWeek);
+
       $container.fadeOut(function() {
         $standingsTable.empty();
         $averagesTable.empty();
         requestData(pageConfig, params);
       });
     } else {
+      // If invalid, show error message(s)
+
       if (params.selectedTeams.length <= 1) {
         console.log('params.selectedTeams = ', params.selectedTeams);
-        $(this).append('<div class="error">Must select at least two teams</div>');
+        $form.append('<div class="error">Must select at least two teams</div>');
       }
       if (startWeek >= endWeek) {
         console.log('startWeek = ', startWeek);
         console.log('endWeek = ', endWeek);
-        $(this).append('<div class="error">Ending week must be after starting week</div>');
+        $form.append('<div class="error">Ending week must be after starting week</div>');
       }
     }
-    // var searchType = $(this).data('criterion'),
-    //     string = $(this).find('input[type="search"]').val();
+
+    // TODO: what was this for?
+    //
+    // var searchType = $form.data('criterion'),
+    //     string = $form.find('input[type="search"]').val();
     // if (string.length > 0) {
     //   $('form').not(this).trigger('reset');
     //   $('select').val('default');
