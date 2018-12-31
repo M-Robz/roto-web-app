@@ -13,28 +13,6 @@ $(document).ready(function() {
    * Inputs:
    *  - pageConfig (object): See readme for description
    *
-   * TODO: Delete this
-   *  - pageConfig (object) = {
-   *      logos (object): {
-   *        team1 (string),
-   *        team2 (string)
-   *      },
-   *      year (string),
-   *      categoryGroups (object): {
-   *        group1 (array): [
-   *          {name, isRatio, isNegative}
-   *        ],
-   *        group2 (array): [
-   *          {name, isRatio, isNegative}
-   *        ]
-   *      }
-   *    }
-   *  - params (object) = {
-   *      selectedTeams (array of strings),
-   *      startWeek (integer),
-   *      endWeek (integer)
-   *    }
-   *
    * Output: none
   */
   var requestData = function(config, params) {
@@ -84,7 +62,7 @@ $(document).ready(function() {
    * Build markup for standings table from server response.
    *
    * Inputs:
-   *  - data (object): Server response
+   *  - data (object): Server response (see readme for description)
    *
    * Output: (string): Markup to be inserted inside the table
    */
@@ -110,12 +88,6 @@ $(document).ready(function() {
     '<tr>';
 
     categoryGroups.forEach(function (groupName) {
-      // Normal way of doing it
-      // pageConfig.categoryGroups[groupName].forEach(function (category) {
-      //   headerMarkup += '<th>' + category.name + '</th>';
-      // });
-
-      // Trying a new approach like use of map() below; this way headerMarkup is only concatenated once
       headerMarkup += pageConfig.categoryGroups[groupName].map(function (category) {
         return '<th>' + category.name + '</th>';
       }).join('');
@@ -164,7 +136,7 @@ $(document).ready(function() {
    * Build markup for averages table from server response.
    *
    * Inputs:
-   *  - data (object): Server response
+   *  - data (object): Server response (see readme for description)
    *
    * Output: (string): Markup to be inserted inside the table
    */
