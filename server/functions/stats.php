@@ -1,5 +1,7 @@
 <?php
 
+// TODO: update for RHL
+
 /*
  * ---- Stat calculations ----
  */

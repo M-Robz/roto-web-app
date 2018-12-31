@@ -8,19 +8,26 @@ $(document).ready(function() {
   /*
    * ---- requestData ----
    *
-   * TODO: will have to refactor to work w/ RHL
-   *
    * TODO: DESCRIPTION
    *
    * Inputs:
+   *  - pageConfig (object): See readme for description
+   *
+   * TODO: Delete this
    *  - pageConfig (object) = {
+   *      logos (object): {
+   *        team1 (string),
+   *        team2 (string)
+   *      },
    *      year (string),
-   *      batCats (array) = [
-   *        {name, isRatio, isNegative}
-   *      ],
-   *      pitCats (array) = [
-   *        {name, isRatio, isNegative}
-   *      ]
+   *      categoryGroups (object): {
+   *        group1 (array): [
+   *          {name, isRatio, isNegative}
+   *        ],
+   *        group2 (array): [
+   *          {name, isRatio, isNegative}
+   *        ]
+   *      }
    *    }
    *  - params (object) = {
    *      selectedTeams (array of strings),
@@ -39,12 +46,8 @@ $(document).ready(function() {
     $.ajax('server.php', {
       type: 'POST',
       data: {
-        'year': config.year,
-        'batCats': config.batCats,
-        'pitCats': config.pitCats,
-        'teams': params.selectedTeams,
-        'startWeek': params.startWeek,
-        'endWeek': params.endWeek
+        config: config,
+        params: params
       },
       dataType: 'json',
       success: function(response) {
@@ -86,31 +89,42 @@ $(document).ready(function() {
    * Output: (string): Markup to be inserted inside the table
    */
   var buildStandingsMarkup = function(data) {
-    var headerMarkup,
+    var categoryGroups = Object.keys(pageConfig.categoryGroups), // string: names of category groups
+        headerMarkup,
         rowMarkup = []; // array of objects: {rank, html}
 
-    // Build markup for table header
+    //--- Begin markup for table header
     headerMarkup = '<tr>' +
-      '<th colspan="3" rowspan="2">Weeks ' + params.startWeek + '&ndash;' + params.endWeek + '</th>' +
-      '<th colspan="' + pageConfig.batCats.length + '">% chance of winning category</th>' +
-      '<th rowspan="2">Batting*</th>' +
-      '<th colspan="' + pageConfig.pitCats.length + '">% chance of winning category</th>' +
-      '<th rowspan="2">Pitching*</th>' +
-      '<th rowspan="2">Total*<br>(# cats)</th>' +
+      '<th colspan="3" rowspan="2">Weeks ' + params.startWeek + '&ndash;' + params.endWeek + '</th>';
+
+    categoryGroups.forEach(function (groupName) {
+      headerMarkup += '<th colspan="' + pageConfig.categoryGroups[groupName].length + '">% chance of winning category</th>' +
+        '<th rowspan="2">' + groupName + '*</th>';
+    });
+
+    headerMarkup += '<th rowspan="2">Total*<br>(# cats)</th>' +
       '<th rowspan="2">Average**<br>(win%)</th>' +
       '<th rowspan="2">H2H%</th>' +
       '<th rowspan="2">Roto &dash;<br>H2H</th>' +
     '</tr>' +
     '<tr>';
-    pageConfig.batCats.forEach(function(category) {
-      headerMarkup += '<th>' + category.name + '</th>';
-    });
-    pageConfig.pitCats.forEach(function(category) {
-      headerMarkup += '<th>' + category.name + '</th>';
-    });
-    headerMarkup += '</tr>';
 
-    // Build markup for rows of team stats
+    categoryGroups.forEach(function (groupName) {
+      // Normal way of doing it
+      // pageConfig.categoryGroups[groupName].forEach(function (category) {
+      //   headerMarkup += '<th>' + category.name + '</th>';
+      // });
+
+      // Trying a new approach like use of map() below; this way headerMarkup is only concatenated once
+      headerMarkup += pageConfig.categoryGroups[groupName].map(function (category) {
+        return '<th>' + category.name + '</th>';
+      }).join('');
+    });
+
+    headerMarkup += '</tr>';
+    //--- End markup for table header
+
+    //--- Begin markup for rows of team stats
     params.selectedTeams.forEach(function(teamName) {
       var teamData = data.teamStats[teamName],
           teamMarkup = {rank: teamData.aggregateStats.rank};
@@ -120,15 +134,12 @@ $(document).ready(function() {
         '<td class="imgCell"><img src="' + pageConfig.logos[teamName] + '"></td>' +
         '<td>' + teamName + '</td>';
 
-      pageConfig.batCats.forEach(function(category) {
-        teamMarkup.html += '<td>' + teamData.categoryStats[category.name].score + '</td>';
+      categoryGroups.forEach(function (groupName) {
+        teamMarkup.html += pageConfig.categoryGroups[groupName].map(function (category) {
+          return '<td>' + teamData.categoryStats[category.name].score + '</td>';
+        }).join('') +
+          '<td>' + teamData.aggregateStats[groupName] + '</td>';
       });
-      teamMarkup.html += '<td>' + teamData.aggregateStats.batting + '</td>';
-
-      pageConfig.pitCats.forEach(function(category) {
-        teamMarkup.html += '<td>' + teamData.categoryStats[category.name].score + '</td>';
-      });
-      teamMarkup.html += '<td>' + teamData.aggregateStats.pitching + '</td>';
 
       teamMarkup.html += '<td>' + teamData.aggregateStats.grandTotal + '</td>' +
         '<td>' + teamData.aggregateStats.rotoPct + '</td>' +
@@ -137,7 +148,9 @@ $(document).ready(function() {
       '</tr>';
       rowMarkup.push(teamMarkup);
     });
+    //--- End markup for rows of team stats
 
+    // Sort row markup by team rank
     rowMarkup.sort(function(a, b) {
       return a.rank - b.rank;
     });
@@ -145,21 +158,38 @@ $(document).ready(function() {
     return headerMarkup + rowMarkup.map(function(teamMarkup) { return teamMarkup.html }).join('');
   };
 
+  /*
+   * ---- buildAveragesMarkup ----
+   *
+   * Build markup for averages table from server response.
+   *
+   * Inputs:
+   *  - data (object): Server response
+   *
+   * Output: (string): Markup to be inserted inside the table
+   */
   var buildAveragesMarkup = function(data) {
-    var allCats = pageConfig.batCats.concat(pageConfig.pitCats),
+    var categoryGroups = Object.keys(pageConfig.categoryGroups), // string: names of category groups
+        allCats = [], // array of objects
         headerMarkup,
         rowMarkup = [], // array of strings
         footerMarkup;
 
-    // Build markup for table header
+    // Merge categories from all category groups into a single array
+    categoryGroups.forEach(function (groupName) {
+      allCats.concat(pageConfig.categoryGroups[groupName]);
+    });
+
+    // --- Begin markup for table header
     headerMarkup = '<tr>' +
       '<th>Averages per Week</th>';
     allCats.forEach(function(category) {
       headerMarkup += '<th>' + category.name + '</th>';
     });
     headerMarkup += '</tr>';
+    // --- End markup for table header
 
-    // Build markup for rows of team stats
+    // --- Begin markup for rows of team stats
     params.selectedTeams.forEach(function(teamName) {
       var teamData = data.teamStats[teamName],
           teamMarkup;
@@ -177,8 +207,9 @@ $(document).ready(function() {
       teamMarkup += '</tr>';
       rowMarkup.push(teamMarkup);
     });
+    // --- End markup for rows of team stats
 
-    // Build markup for mean, median, min
+    // --- Begin markup for mean, median, min
     footerMarkup = '<tr>' +
       '<td colspan="2">Max</td>';
     allCats.forEach(function(category) {
@@ -199,6 +230,7 @@ $(document).ready(function() {
       footerMarkup += '<td>' + data.leagueStats[category.name].min + '</td>';
     });
     footerMarkup += '</tr>';
+    // --- End markup for mean, median, min
 
     return headerMarkup + rowMarkup.join('') + footerMarkup;
   };

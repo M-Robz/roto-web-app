@@ -4,17 +4,29 @@
 
 ```
 {
-  year              str
-  batCats: [        arr
-    {               obj
-      name          str
-      isRatio       boolean (whether the category is a ratio)
-      isNegative    boolean (whether the category is scored negatively, i.e., lower is better)
-  pitCats: [
-    (same as batCats)
-  teams             arr of str (teams to query for)
-  startWeek         int (first week of data to query for)
-  endWeek           int (last week of data to query for)
+  pageConfig: {         obj
+    logos: {            obj
+      team1,            str
+      team2
+    },
+    year,               str
+    categoryGroups: {   obj
+      group1: [         arr of obj
+        {               
+          name          str
+          isRatio       boolean (whether the category is a ratio)
+          isNegative    boolean (whether the category is scored negatively, i.e., lower is better)
+        },
+        {}
+      ],
+      group2
+    }
+  },
+  params: {           obj
+    selectedTeams,    arr of str (teams to query for)
+    startWeek,        int (first week of data to query for)
+    endWeek           int (last week of data to query for)
+  }
 }
 ```
 

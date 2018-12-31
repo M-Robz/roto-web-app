@@ -1,5 +1,7 @@
 <?php
 
+// TODO: will have to refactor to work w/ arbitrary category groups and RHL categories
+
 /*
  * ~~~~ Load modules ~~~~
  */
