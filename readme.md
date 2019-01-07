@@ -58,3 +58,29 @@ $leagueStats = [        assoc arr (keys are cat names)
     median              float
     min                 float
 ```
+
+## PHP dev notes
+
+### Assoc arrays
+
+  - "->" for objects, "=>" for assoc arrays ("maps")
+  - use fat arrow when creating array:
+    `array('key1' => value1, ...)` or
+    `['key1' => value1, ...]`
+  - items in assoc arrays must be referenced with $array[$key], and not with fat arrow
+
+### foreach loops
+  - foreach can loop over an assoc array with or without assigning a var to the current key:
+    `foreach ($arr as $key => $value)` or
+    `foreach ($arr as $value)`
+  - use ampersand to directly modify an array element w/i the loop (via reference) instead of a copy var:
+    `foreach ($arr as &$value) {
+      $value = $value * 2;
+    }`
+    - it's best practice to destroy the reference immediately following the loop with `unset($value)`
+
+### Pushing to arrays
+
+  - array_push does same thing as `$array[] = `; latter is preferred when only adding one element
+  - can also use `+=`
+  - for assoc arrays, do `$data += [ "two" => 2 ];`, or `$data += [ "two" => 2, "three" => 3 ];` to add multiple items at once
