@@ -21,6 +21,7 @@ require 'TeamStatHolder.php';
 $user = 'tbpgcpqd_guest';
 $pw = 'zxcvb';
 
+
 /*
  * ~~~~ Read request (make JSON so PHP can read as assoc array) ~~~~
  */
@@ -30,8 +31,6 @@ $teams = $_POST['params']['selectedTeams']; // arr of str
 $startWeek = $_POST['params']['startWeek']; // int
 $endWeek = $_POST['params']['endWeek']; // int
 $categoryGroups = $_POST['config']['categoryGroups']; // assoc arr
-//$batCatConfigs = $_POST['batCats']; // arr of assoc arrays (I think PHP will treat JS objects as assoc arrays)
-//$pitCatConfigs = $_POST['pitCats']; // arr of assoc arrays
 $allCatConfigs = []; // arr of assoc arrays (I think PHP will treat JS objects as assoc arrays)
 foreach ($categoryGroups as $group) {
   $allCatConfigs = array_merge($allCatConfigs, $group);
@@ -39,8 +38,6 @@ foreach ($categoryGroups as $group) {
 
 // Extract category names and store in arrays
 $catNames = array('all' => []); // assoc arr => arr
-// $catNames['all'] = []; // arr
-// $groupNames = array_keys($categoryGroups); // arr
 foreach ($categoryGroups as $groupName => $categories) {
   $catNames[$groupName] = [];
 
@@ -50,21 +47,6 @@ foreach ($categoryGroups as $groupName => $categories) {
 
   $catNames['all'] = array_merge($catNames['all'], $catNames[$groupName]);
 }
-
-// $batCatNames = [];
-// $pitCatNames = [];
-// foreach ($batCatConfigs as $batCat) {
-//   array_push($batCatNames, $batCat->name);
-// }
-// foreach ($pitCatConfigs as $pitCat) {
-//   array_push($pitCatNames, $pitCat->name);
-// }
-// $allCatNames = array_merge($batCatNames, $pitCatNames);
-
-// Count categories
-// $numBatCats = count($batCatNames);
-// $numPitCats = count($pitCatNames);
-// $numAllCats = $numBatCats + $numPitCats;
 
 
 /*
@@ -226,32 +208,20 @@ foreach ($teams as $thisTeam) {
 
   // Compute totals
     // Note: can't use var for $teamStats[$thisTeam] bc it would be a copy, not a reference
-
-  // $totals = []; // assoc arr
-  // $totals->grandTotal = 0;
-
   $teamStats[$thisTeam]->aggregateStats['grandTotal'] = 0;
 
   foreach ($groupNames as $groupName) {
-    // $totals[$groupName] = round(array_sum($teamStats[$thisTeam]->getScores($catNames[$groupName])) / 100, 2);
-    // $totals->grandTotal += $totals[$groupName];
-
     $total = round(array_sum($teamStats[$thisTeam]->getScores($catNames[$groupName])) / 100, 2);
     $teamStats[$thisTeam]->aggregateStats[$groupName] = $total;
     $teamStats[$thisTeam]->aggregateStats['grandTotal'] += $total;
   }
-  // $pitTotal = array_sum($teamStats[$thisTeam]->getScores($pitCatNames)) / 100;
-  // $teamStats[$thisTeam]->aggregateStats['pitching'] = round($pitTotal, 2);
-  // $teamStats[$thisTeam]->aggregateStats['grandTotal'] = round($batTotal + $pitTotal, 2);
 
   $teamStats[$thisTeam]->aggregateStats['rotoPct'] = round($teamStats[$thisTeam]->aggregateStats['grandTotal'] / count($catNames['all']) * 100);
-  // $teamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100);
 
   $teamStats[$thisTeam]->aggregateStats['diffInPct'] = $teamStats[$thisTeam]->aggregateStats['rotoPct'] - $teamStats[$thisTeam]->aggregateStats['h2hPct'];
 
   // Push current team's grand total to array of all teams' totals
   $grandTotals += [$thisTeam => $teamStats[$thisTeam]->aggregateStats['grandTotal']];
-  // array_push($grandTotals, $thisTeam => $teamStats[$thisTeam]->aggregateStats['grandTotal']);
 }
 
 // Sort highest to lowest while preserving original keys
