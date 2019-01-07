@@ -1,7 +1,5 @@
 <?php
 
-// TODO: will have to refactor to work w/ arbitrary category groups and RHL categories
-
 /*
  * ~~~~ Load modules ~~~~
  */
@@ -18,39 +16,55 @@ require 'TeamStatHolder.php';
 
 
 /*
- * ~~~~ DB config ~~~~
+ * ~~~~ DB credentials ~~~~
  */
-$db = 'tbpgcpqd_alooo';
 $user = 'tbpgcpqd_guest';
 $pw = 'zxcvb';
-
 
 /*
  * ~~~~ Read request (make JSON so PHP can read as assoc array) ~~~~
  */
-$dbTable = 'roto_' . strval($_POST['year']); // int -> str (won't need to convert if year is str in JSON)
-$teams = $_POST['teams']; // array of str
-$startWeek = $_POST['startWeek']; // int
-$endWeek = $_POST['endWeek']; // int
-$batCatConfigs = $_POST['batCats']; // arr of assoc arrays (I think PHP will treat JS objects as assoc arrays)
-$pitCatConfigs = $_POST['pitCats']; // arr of assoc arrays
-$allCatConfigs = array_merge($batCatConfigs, $pitCatConfigs); // arr of assoc arrays
+$db = 'tbpgcpqd_' . $_POST['config']['league']; // str
+$dbTable = 'roto_' . strval($_POST['config']['year']); // int => str (won't need to convert if year is str in JSON)
+$teams = $_POST['params']['selectedTeams']; // arr of str
+$startWeek = $_POST['params']['startWeek']; // int
+$endWeek = $_POST['params']['endWeek']; // int
+$categoryGroups = $_POST['config']['categoryGroups']; // assoc arr
+//$batCatConfigs = $_POST['batCats']; // arr of assoc arrays (I think PHP will treat JS objects as assoc arrays)
+//$pitCatConfigs = $_POST['pitCats']; // arr of assoc arrays
+$allCatConfigs = []; // arr of assoc arrays (I think PHP will treat JS objects as assoc arrays)
+foreach ($categoryGroups as $group) {
+  $allCatConfigs = array_merge($allCatConfigs, $group);
+}
 
-// Extract bat and pit category names and store in arrays
-$batCatNames = [];
-$pitCatNames = [];
-foreach ($batCatConfigs as $batCat) {
-  array_push($batCatNames, $batCat->name);
+// Extract category names and store in arrays
+$catNames = array('all' => []); // assoc arr => arr
+// $catNames['all'] = []; // arr
+// $groupNames = array_keys($categoryGroups); // arr
+foreach ($categoryGroups as $groupName => $categories) {
+  $catNames[$groupName] = [];
+
+  foreach ($categories as $category) {
+    array_push($catNames[$groupName], $category['name']);
+  }
+
+  $catNames['all'] = array_merge($catNames['all'], $catNames[$groupName]);
 }
-foreach ($pitCatConfigs as $pitCat) {
-  array_push($pitCatNames, $pitCat->name);
-}
-$allCatNames = array_merge($batCatNames, $pitCatNames);
+
+// $batCatNames = [];
+// $pitCatNames = [];
+// foreach ($batCatConfigs as $batCat) {
+//   array_push($batCatNames, $batCat->name);
+// }
+// foreach ($pitCatConfigs as $pitCat) {
+//   array_push($pitCatNames, $pitCat->name);
+// }
+// $allCatNames = array_merge($batCatNames, $pitCatNames);
 
 // Count categories
-$numBatCats = count($batCatNames);
-$numPitCats = count($pitCatNames);
-$numAllCats = $numBatCats + $numPitCats;
+// $numBatCats = count($batCatNames);
+// $numPitCats = count($pitCatNames);
+// $numAllCats = $numBatCats + $numPitCats;
 
 
 /*
@@ -99,14 +113,14 @@ foreach ($teams as $team) {
       // Calculate mean and sd
       $totals = []; // totals for each wk (non-assoc arr)
       while ($row = $result->fetch_row()) {
-        array_push($totals, $row[$category->name]);
+        array_push($totals, $row[$category['name']]);
       }
       $mean = mean($totals);
       $sd = stats_standard_deviation($totals);
 
       // Calculate cumulative ratios if applicable
-      if ($category->isRatio) {
-        switch ($category->name) {
+      if ($category['isRatio']) {
+        switch ($category['name']) {
           case 'OBP':
             $h = 0;
             $bb = 0;
@@ -136,15 +150,33 @@ foreach ($teams as $team) {
             }
             $cumulRatio = whip($wh, $ip);
             break;
+          case 'GAA':
+            $ga = 0;
+            $gp = 0;
+            while ($row = $result->fetch_row()) {
+              $ga += $row['GA'];
+              $gp += $row['GP'];
+            }
+            $cumulRatio = gaa($ga, $gp);
+            break;
+          case 'SV%':
+            $sv = 0;
+            $sa = 0;
+            while ($row = $result->fetch_row()) {
+              $sv += $row['SV'];
+              $sa += $row['SA'];
+            }
+            $cumulRatio = svp($sv, $sa);
+            break;
         }
 
         // Include cumulRatio
-        $teamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd, 'cumulRatio' => $cumulRatio);
+        $teamStats[$team]->categoryStats[$category['name']] = array('mean' => $mean, 'sd' => $sd, 'cumulRatio' => $cumulRatio);
 
       } else {
 
         // Don't include cumulRatio
-        $teamStats[$team]->categoryStats[$category->name] = array('mean' => $mean, 'sd' => $sd);
+        $teamStats[$team]->categoryStats[$category['name']] = array('mean' => $mean, 'sd' => $sd);
       }
     }
 
@@ -171,14 +203,15 @@ foreach ($teams as $thisTeam) {
 
   // Calculate category scores
   foreach ($allCatConfigs as $category) {
-    $ownStats = $teamStats[$thisTeam]->categoryStats[$category->name];
+    $ownStats = $teamStats[$thisTeam]->categoryStats[$category['name']];
     $probabilities = [];
+
     foreach ($teams as $opponent) {
       if ($opponent !== $thisTeam) {
-        $oppStats = $teamStats[$opponent]->categoryStats[$category->name];
+        $oppStats = $teamStats[$opponent]->categoryStats[$category['name']];
         $z = ($oppStats['mean'] - $ownStats['mean']) / (pow($oppStats['sd'], 2) + pow($ownStats['sd'], 2));
 
-        if ($category->isNegative) { // TODO: need `= true`? Also below
+        if ($category['isNegative']) { // TODO: need `= true`? Also below
           $p = cdf($z);
         } else {
           $p = 1 - cdf($z);
@@ -187,21 +220,38 @@ foreach ($teams as $thisTeam) {
         array_push($probabilities, $p);
       }
     }
-    $teamStats[$thisTeam]->categoryStats[$category->name]['score'] = round(mean($probabilities) * 100, 5); // retain five decimal places of precision
+
+    $teamStats[$thisTeam]->categoryStats[$category['name']]['score'] = round(mean($probabilities) * 100, 5); // retain five decimal places of precision
   }
 
   // Compute totals
     // Note: can't use var for $teamStats[$thisTeam] bc it would be a copy, not a reference
-  $batTotal = array_sum($teamStats[$thisTeam]->getScores($batCatNames)) / 100;
-  $pitTotal = array_sum($teamStats[$thisTeam]->getScores($pitCatNames)) / 100;
-  $teamStats[$thisTeam]->aggregateStats['batting'] = round($batTotal, 2);
-  $teamStats[$thisTeam]->aggregateStats['pitching'] = round($pitTotal, 2);
-  $teamStats[$thisTeam]->aggregateStats['grandTotal'] = round($batTotal + $pitTotal, 2);
-  $teamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100);
+
+  // $totals = []; // assoc arr
+  // $totals->grandTotal = 0;
+
+  $teamStats[$thisTeam]->aggregateStats['grandTotal'] = 0;
+
+  foreach ($groupNames as $groupName) {
+    // $totals[$groupName] = round(array_sum($teamStats[$thisTeam]->getScores($catNames[$groupName])) / 100, 2);
+    // $totals->grandTotal += $totals[$groupName];
+
+    $total = round(array_sum($teamStats[$thisTeam]->getScores($catNames[$groupName])) / 100, 2);
+    $teamStats[$thisTeam]->aggregateStats[$groupName] = $total;
+    $teamStats[$thisTeam]->aggregateStats['grandTotal'] += $total;
+  }
+  // $pitTotal = array_sum($teamStats[$thisTeam]->getScores($pitCatNames)) / 100;
+  // $teamStats[$thisTeam]->aggregateStats['pitching'] = round($pitTotal, 2);
+  // $teamStats[$thisTeam]->aggregateStats['grandTotal'] = round($batTotal + $pitTotal, 2);
+
+  $teamStats[$thisTeam]->aggregateStats['rotoPct'] = round($teamStats[$thisTeam]->aggregateStats['grandTotal'] / count($catNames['all']) * 100);
+  // $teamStats[$thisTeam]->aggregateStats['rotoPct'] = round(($batTotal + $pitTotal) / $numAllCats * 100);
+
   $teamStats[$thisTeam]->aggregateStats['diffInPct'] = $teamStats[$thisTeam]->aggregateStats['rotoPct'] - $teamStats[$thisTeam]->aggregateStats['h2hPct'];
 
   // Push current team's grand total to array of all teams' totals
-  array_push($grandTotals, $thisTeam => $teamStats[$thisTeam]->aggregateStats['grandTotal']);
+  $grandTotals += [$thisTeam => $teamStats[$thisTeam]->aggregateStats['grandTotal']];
+  // array_push($grandTotals, $thisTeam => $teamStats[$thisTeam]->aggregateStats['grandTotal']);
 }
 
 // Sort highest to lowest while preserving original keys
@@ -224,20 +274,21 @@ $leagueStats = [];
 
 foreach ($allCatConfigs as $category) {
   $rawTotals = [];
+  $catName = $category['name'];
 
   foreach ($teamStats as $team) {
 
-    if ($category->isRatio) {
-      array_push($rawTotals, $team->categoryStats[$category->name]->cumulRatio);
+    if ($category['isRatio']) {
+      array_push($rawTotals, $team->categoryStats[$catName]['cumulRatio']);
 
     } else {
-      array_push($rawTotals, $team->categoryStats[$category->name]->mean);
+      array_push($rawTotals, $team->categoryStats[$catName]['mean']);
     }
   }
 
-  $leagueStats[$category->name]->max = max($rawTotals);
-  $leagueStats[$category->name]->median = median($rawTotals);
-  $leagueStats[$category->name]->min = min($rawTotals);
+  $leagueStats[$catName]['max'] = max($rawTotals);
+  $leagueStats[$catName]['median'] = median($rawTotals);
+  $leagueStats[$catName]['min'] = min($rawTotals);
 }
 
 

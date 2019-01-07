@@ -5,6 +5,7 @@
 ```
 {
   pageConfig: {         obj
+    league,             str
     logos: {            obj
       team1,            str
       team2
